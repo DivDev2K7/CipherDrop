@@ -6,6 +6,7 @@ import { UploadWorkspace } from './components/upload/UploadWorkspace.tsx';
 import { DownloadPage } from './components/download/DownloadPage.tsx';
 import { SecurityDashboard } from './components/dashboard/SecurityDashboard.tsx';
 import { FeaturesSection } from './components/ui/FeaturesSection.tsx';
+import { ShowcaseSection } from './components/ui/ShowcaseSection.tsx';
 import { Footer } from './components/ui/Footer.tsx';
 import { CyberBackground } from './components/3d/CyberBackground.tsx';
 import type { ActiveTab } from './types/index.ts';
@@ -73,6 +74,7 @@ export function App() {
               <div id="upload-anchor">
                 <UploadWorkspace onOpenDownload={handleOpenDownload} />
               </div>
+              <ShowcaseSection />
               <FeaturesSection />
             </motion.div>
           )}
@@ -118,6 +120,7 @@ export function App() {
               transition={{ duration: 0.3 }}
               className="pt-8"
             >
+              <ShowcaseSection />
               <FeaturesSection />
             </motion.div>
           )}

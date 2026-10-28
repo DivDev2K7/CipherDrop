@@ -307,6 +307,20 @@ export const DownloadPage: React.FC<DownloadPageProps> = ({
               </span>
             </div>
 
+            {/* Cryptographic Sentinel Telemetry Visual Banner */}
+            <div className="relative h-28 w-full overflow-hidden rounded-2xl border border-cyan-500/25 bg-black/60 shadow-lg">
+              <img
+                src="/videos/cyber-generation.gif"
+                alt="Cryptographic verification in progress"
+                className="w-full h-full object-cover object-center opacity-55"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-navy-950/90 via-navy-950/40 to-transparent pointer-events-none" />
+              <div className="absolute bottom-2.5 left-3 flex items-center gap-2 text-[10px] font-mono text-cyan-300 bg-black/75 px-2.5 py-1 rounded-md border border-cyan-500/30 backdrop-blur-md">
+                <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                <span>CIPHER SENTINEL VERIFICATION ONLINE</span>
+              </div>
+            </div>
+
             {/* File info card */}
             <div className="rounded-2xl border border-slate-800 bg-navy-950/70 p-4">
               <div className="flex items-center gap-3.5">

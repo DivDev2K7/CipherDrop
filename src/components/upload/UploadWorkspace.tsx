@@ -52,6 +52,7 @@ export const UploadWorkspace: React.FC<UploadWorkspaceProps> = ({ onOpenDownload
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [uploadStatusStage, setUploadStatusStage] = useState<string>('');
   const [completedShare, setCompletedShare] = useState<ShareMetadata | null>(null);
+  const [visualMode, setVisualMode] = useState<'cgi' | '3d'>('cgi');
 
   // Validate a chosen file
   const validateFile = (file: File): string | null => {
@@ -201,9 +202,50 @@ export const UploadWorkspace: React.FC<UploadWorkspaceProps> = ({ onOpenDownload
                 </p>
               </div>
 
-              {/* 3D Cube Preview Mini */}
-              <div className="hidden sm:flex items-center justify-center p-2 rounded-2xl border border-cyan-500/15 bg-navy-950/60">
-                <FileCube isUploading={isUploading} className="h-20 w-20" />
+              {/* 3D Visual Preview (Toggleable: CGI Film vs 3D Cube) */}
+              <div className="hidden sm:flex flex-col items-center gap-1.5 p-2 rounded-2xl border border-cyan-500/20 bg-navy-950/70 shadow-lg shrink-0">
+                <div className="flex items-center gap-1 rounded-lg border border-slate-800 bg-navy-900/80 p-0.5 text-[9px] font-mono">
+                  <button
+                    type="button"
+                    onClick={() => setVisualMode('cgi')}
+                    className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
+                      visualMode === 'cgi'
+                        ? 'bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/30'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    CGI Stream
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setVisualMode('3d')}
+                    className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
+                      visualMode === '3d'
+                        ? 'bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/30'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    3D Cube
+                  </button>
+                </div>
+                <div className="relative h-20 w-32 overflow-hidden rounded-xl border border-cyan-500/20 bg-black/60 flex items-center justify-center">
+                  {visualMode === 'cgi' ? (
+                    <>
+                      <img
+                        src="/videos/cgi-product-film.gif"
+                        alt="CGI Payload Film"
+                        className="w-full h-full object-cover object-center opacity-85"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-navy-950/80 via-transparent to-transparent pointer-events-none" />
+                      <div className="absolute bottom-1 left-1.5 flex items-center gap-1 text-[8px] font-mono text-cyan-300 bg-black/80 px-1.5 py-0.5 rounded">
+                        <span className="h-1 w-1 rounded-full bg-cyan-400 animate-pulse" />
+                        <span>CGI STREAM</span>
+                      </div>
+                    </>
+                  ) : (
+                    <FileCube isUploading={isUploading} className="h-20 w-20" />
+                  )}
+                </div>
               </div>
             </div>
 
