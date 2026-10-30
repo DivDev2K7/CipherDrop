@@ -32,5 +32,5 @@ export async function verifyPassword(attempt: string, hash: string): Promise<boo
   return bcrypt.compare(attempt, hash);
 }
 
-// Dummy hash for constant-time comparison when share doesn't exist
+// Constant-time password verification to prevent timing attack / timing oracle side-channels
 export const DUMMY_HASH = '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj0fGdA7WVGi';
