@@ -1,0 +1,46 @@
+// This is your Prisma schema file.
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite" // Use SQLite for local dev (no PostgreSQL needed)
+  url      = env("DATABASE_URL")
+}
+
+// --- MODELS ---
+
+model Share {
+  id               String   @id @default(uuid())
+  code             String   @unique
+  filename         String
+  fileSize         Int
+  fileType         String
+  storagePath      String?
+  createdAt        DateTime @default(now())
+  expiresAt        DateTime
+  maxDownloads     Int
+  downloadCount    Int      @default(0)
+  passwordHash     String?
+  encryptionLevel  String   @default("standard")
+  status           String   @default("active") // active | expired | limit-reached | revoked
+
+  // Relations
+  logs ActivityLog[]
+}
+
+model ActivityLog {
+  id         String   @id @default(uuid())
+  timestamp  DateTime @default(now())
+  action     String
+  targetFile String
+  ipAddress  String
+  status     String   // success | warning | info
+  details    String?
+
+  // Relation
+  share Share?     @relation(fields: [shareId], references: [id])
+  shareId String?
+}
