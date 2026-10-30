@@ -5,6 +5,7 @@ import { router as healthRouter } from './routes/health.js';
 import { router as sharesRouter } from './routes/shares.js';
 import { router as dashboardRouter } from './routes/dashboard.js';
 import { router as uploadRouter } from './routes/upload.js';
+import { router as downloadRouter } from './routes/download.js';
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use('/api/v1/health', healthRouter);
 app.use('/api/v1/shares', sharesRouter);
 app.use('/api/v1/dashboard', dashboardRouter);
 app.use('/api/v1/upload', uploadRouter);
+app.use('/api/v1/download', downloadRouter);
 
 // 404 handler for API routes
 app.use('/api/v1/*', (req, res) => {
