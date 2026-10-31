@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 import prisma from '../lib/prisma.js';
 import { saveFile } from '../lib/storage.js';
+import { isS3Enabled, generatePresignedPutUrl } from '../lib/s3.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -33,32 +34,60 @@ const upload = multer({
 });
 
 // POST /api/v1/upload/:shareId - Upload a file for a share
+// When S3 is enabled, returns a pre-signed PUT URL for direct client upload.
+// When S3 is disabled, accepts multipart upload and stores on disk.
 router.post('/:shareId', upload.single('file'), async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
-    }
-
     const share = await prisma.share.findUnique({
       where: { id: req.params.shareId },
     });
 
     if (!share) {
-      // Clean up temp file
-      try { fs.unlinkSync(req.file.path); } catch {}
+      if (req.file) {
+        try { fs.unlinkSync(req.file.path); } catch {}
+      }
       return res.status(404).json({ error: 'Share not found' });
     }
 
-    // Save file to permanent storage
+    // --- S3 path: direct client-to-S3 upload via pre-signed URL ---
+    if (isS3Enabled()) {
+      // Clean up any temp file from multer
+      if (req.file) {
+        try { fs.unlinkSync(req.file.path); } catch {}
+      }
+
+      const s3Key = `cipherdrop/${share.id}/${Date.now()}-${req.body.filename || share.filename}`;
+      const contentType = req.body.fileType || 'application/octet-stream';
+
+      const uploadUrl = await generatePresignedPutUrl(s3Key, contentType);
+
+      // Store the S3 key as the storage path
+      await prisma.share.update({
+        where: { id: share.id },
+        data: { storagePath: s3Key },
+      });
+
+      return res.json({
+        success: true,
+        storagePath: s3Key,
+        uploadUrl,
+        method: 'S3-presigned-PUT',
+        filename: req.body.filename || share.filename,
+      });
+    }
+
+    // --- Local disk path ---
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
     const storagePath = saveFile(share.id, req.file);
 
-    // Update share with storage path
     await prisma.share.update({
       where: { id: share.id },
       data: { storagePath },
     });
 
-    // Log activity
     await prisma.activityLog.create({
       data: {
         action: 'File Uploaded',
@@ -78,7 +107,6 @@ router.post('/:shareId', upload.single('file'), async (req, res) => {
     });
   } catch (error) {
     console.error('Upload error:', error);
-    // Clean up temp file if it exists
     if (req.file?.path) {
       try { fs.unlinkSync(req.file.path); } catch {}
     }

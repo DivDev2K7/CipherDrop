@@ -13,25 +13,54 @@ import type { ActiveTab } from './types/index.ts';
 import './App.css';
 
 export function App() {
-  const getInitialTab = (): ActiveTab => {
-    if (typeof window !== 'undefined' && window.location.hash) {
-      const hash = window.location.hash.replace('#', '').toLowerCase();
-      if (hash === 'dashboard') return 'dashboard';
-      if (hash === 'download') return 'download';
-      if (hash === 'features') return 'features';
-      if (hash === 'upload') return 'upload';
+  const getInitialRouting = (): { tab: ActiveTab; code: string } => {
+    let tab: ActiveTab = 'upload';
+    let code = 'SEC-8942-ALPHA';
+
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname;
+      if (path.startsWith('/vault/')) {
+        const extracted = path.replace('/vault/', '').split('?')[0].replace(/\/+$/, '').trim();
+        if (extracted) {
+          return { tab: 'download', code: extracted };
+        }
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      const queryCode = params.get('code');
+      if (queryCode) {
+        return { tab: 'download', code: queryCode };
+      }
+
+      if (window.location.hash) {
+        const rawHash = window.location.hash.replace('#', '').toLowerCase();
+        if (rawHash.startsWith('download')) {
+          tab = 'download';
+          const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
+          const c = hashParams.get('code');
+          if (c) code = c;
+        } else if (rawHash === 'dashboard') tab = 'dashboard';
+        else if (rawHash === 'features') tab = 'features';
+        else if (rawHash === 'upload') tab = 'upload';
+      }
     }
-    return 'upload';
+    return { tab, code };
   };
 
-  const [activeTab, setActiveTab] = useState<ActiveTab>(getInitialTab);
-  const [targetShareCode, setTargetShareCode] = useState<string>('SEC-8942-ALPHA');
+  const initialRouting = getInitialRouting();
+  const [activeTab, setActiveTab] = useState<ActiveTab>(initialRouting.tab);
+  const [targetShareCode, setTargetShareCode] = useState<string>(initialRouting.code);
 
   useEffect(() => {
     const handleHash = () => {
-      const hash = window.location.hash.replace('#', '').toLowerCase();
-      if (hash === 'dashboard' || hash === 'download' || hash === 'features' || hash === 'upload') {
-        setActiveTab(hash as ActiveTab);
+      const rawHash = window.location.hash.replace('#', '').toLowerCase();
+      if (rawHash.startsWith('download')) {
+        setActiveTab('download');
+        const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
+        const c = hashParams.get('code');
+        if (c) setTargetShareCode(c);
+      } else if (rawHash === 'dashboard' || rawHash === 'features' || rawHash === 'upload') {
+        setActiveTab(rawHash as ActiveTab);
       }
     };
     window.addEventListener('hashchange', handleHash);
@@ -41,7 +70,7 @@ export function App() {
   const handleOpenDownload = (code: string) => {
     setTargetShareCode(code);
     setActiveTab('download');
-    window.location.hash = 'download';
+    window.location.hash = `download?code=${code}`;
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 

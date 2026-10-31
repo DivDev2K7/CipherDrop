@@ -2,7 +2,8 @@ import { Router } from 'express';
 import prisma from '../lib/prisma.js';
 import { verifyPassword, DUMMY_HASH } from '../lib/crypto.js';
 import { atomicDecrement } from '../lib/redis.js';
-import { getFilePath } from '../lib/storage.js';
+import { getFilePath, streamS3Object } from '../lib/storage.js';
+import { isS3Enabled, generatePresignedGetUrl } from '../lib/s3.js';
 import type { ShareMetadata } from '../types/index.js';
 
 const router = Router();
@@ -121,11 +122,22 @@ router.post('/:code', async (req, res) => {
         },
       });
 
+      // Build download URL
+      let downloadUrl: string | null = null;
+      if (share.storagePath) {
+        if (isS3Enabled()) {
+          // Ephemeral pre-signed GET URL valid for 60 seconds
+          downloadUrl = await generatePresignedGetUrl(share.storagePath, 60);
+        } else {
+          downloadUrl = `${BASE_URL}/api/v1/download/${share.code}/file`;
+        }
+      }
+
       // Return success with share metadata
       return res.json({
         success: true,
         share: mapToShareMetadata(share),
-        downloadUrl: share.storagePath ? `${BASE_URL}/api/v1/download/${share.code}/file` : null,
+        downloadUrl,
       });
     } else {
       // Share doesn't exist - run dummy password check for constant time
@@ -151,6 +163,12 @@ router.get('/:code/file', async (req, res) => {
 
     if (!share || !share.storagePath) {
       return res.status(404).send('File not found');
+    }
+
+    // S3: stream the object directly
+    if (isS3Enabled()) {
+      await streamS3Object(share.storagePath, res, share.filename);
+      return;
     }
 
     const filePath = getFilePath(share.storagePath);

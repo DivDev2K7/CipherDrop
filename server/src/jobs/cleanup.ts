@@ -1,5 +1,5 @@
 import prisma from '../lib/prisma.js';
-import { deleteFile } from '../lib/storage.js';
+import { deleteFile, deleteFileAsync } from '../lib/storage.js';
 import cron from 'node-cron';
 
 /**
@@ -7,9 +7,9 @@ import cron from 'node-cron';
  */
 export async function cleanupExpiredShares(): Promise<void> {
   console.log('🧹 Running cleanup job...');
-  
+
   const now = new Date();
-  
+
   // Find shares that are expired or have reached their download limit
   const sharesToCleanup = await prisma.share.findMany({
     where: {
@@ -19,23 +19,23 @@ export async function cleanupExpiredShares(): Promise<void> {
       ],
     },
   });
-  
+
   console.log(`Found ${sharesToCleanup.length} shares to clean up`);
-  
+
   for (const share of sharesToCleanup) {
     try {
-      // Delete the file from disk
+      // Delete the file from disk or S3
       if (share.storagePath) {
-        deleteFile(share.storagePath);
+        await deleteFileAsync(share.storagePath);
       }
-      
+
       // Update status
       const newStatus = new Date(share.expiresAt) < now ? 'expired' : 'limit-reached';
       await prisma.share.update({
         where: { id: share.id },
         data: { status: newStatus },
       });
-      
+
       // Log activity
       await prisma.activityLog.create({
         data: {
@@ -47,14 +47,14 @@ export async function cleanupExpiredShares(): Promise<void> {
           shareId: share.id,
         },
       });
-      
+
       console.log(`✅ Cleaned up share ${share.code}`);
     } catch (error) {
       console.error(`❌ Failed to clean up share ${share.code}:`, error);
       // Continue with next share
     }
   }
-  
+
   console.log('🧹 Cleanup job completed');
 }
 
@@ -64,11 +64,11 @@ export async function cleanupExpiredShares(): Promise<void> {
 export function startCleanupCron(): void {
   // Run immediately on startup
   cleanupExpiredShares().catch(console.error);
-  
+
   // Then every 5 minutes
   cron.schedule('*/5 * * * *', () => {
     cleanupExpiredShares().catch(console.error);
   });
-  
+
   console.log('✅ Cleanup cron job started (every 5 minutes)');
 }

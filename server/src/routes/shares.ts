@@ -32,9 +32,9 @@ router.get('/', async (req, res) => {
     const shares = await prisma.share.findMany({
       orderBy: { createdAt: 'desc' },
     });
-    const metadata = shares.map((s) => mapToShareMetadata(s, BASE_URL));
+    const metadata = shares.map((s: any) => mapToShareMetadata(s, BASE_URL));
     res.json(metadata);
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: 'Failed to fetch shares' });
   }
 });
@@ -49,7 +49,7 @@ router.get('/:code', async (req, res) => {
       return res.status(404).json({ error: 'Share not found' });
     }
     res.json(mapToShareMetadata(share, BASE_URL));
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: 'Failed to fetch share' });
   }
 });
@@ -129,7 +129,7 @@ router.delete('/:id', async (req, res) => {
     });
 
     res.json({ success: true });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: 'Failed to revoke share' });
   }
 });

@@ -1,4 +1,3 @@
-import { randomUUID } from 'crypto';
 import bcrypt from 'bcrypt';
 
 const SHARE_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';

@@ -16,7 +16,7 @@ router.get('/stats', async (req, res) => {
     });
 
     const shares = await prisma.share.findMany();
-    const totalDownloads = shares.reduce((acc, s) => acc + s.downloadCount, 0);
+    const totalDownloads = shares.reduce((acc: number, s: any) => acc + (s.downloadCount || 0), 0);
 
     const expiringSoon = await prisma.share.count({
       where: {
@@ -42,7 +42,7 @@ router.get('/stats', async (req, res) => {
       expiringSoon,
       passwordProtected,
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: 'Failed to fetch stats' });
   }
 });
@@ -55,7 +55,7 @@ router.get('/logs', async (req, res) => {
       take: 100,
     });
     res.json(logs);
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: 'Failed to fetch logs' });
   }
 });

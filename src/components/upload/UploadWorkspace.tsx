@@ -142,6 +142,7 @@ export const UploadWorkspace: React.FC<UploadWorkspaceProps> = ({ onOpenDownload
     }
 
     try {
+      // 1. Create share metadata
       const result = await transferApi.createTransfer(
         {
           name: selectedFile.name,
@@ -150,9 +151,14 @@ export const UploadWorkspace: React.FC<UploadWorkspaceProps> = ({ onOpenDownload
         },
         settings
       );
+
+      // 2. Upload the actual file
+      await transferApi.uploadFile(result.id, selectedFile);
+
       setCompletedShare(result);
-    } catch {
+    } catch (err) {
       setValidationError('Failed to generate secure link. Please try again.');
+      console.error('Upload error:', err);
     } finally {
       setIsUploading(false);
     }
